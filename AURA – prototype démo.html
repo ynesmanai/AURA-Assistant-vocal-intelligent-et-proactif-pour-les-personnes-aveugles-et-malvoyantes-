@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AURA – assistant vocal accessible (prototype démo)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#070b1f;--bg2:#0e1433;--card:#121a40;--line:#2a3570;--tx:#f1f4ff;--mut:#b4bdea;--vio:#8b5cf6;--blu:#38bdf8;--ok:#4ade80;--warn:#fbbf24;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:radial-gradient(900px 500px at 80% -10%,#2b1c6b55,transparent),var(--bg);color:var(--tx);font:18px/1.6 "Atkinson Hyperlegible",system-ui,sans-serif;min-height:100vh}
+h1,h2,h3{font-family:Sora,system-ui,sans-serif;line-height:1.2;margin:0 0 .6em}
+h1{font-size:clamp(2rem,6vw,3.4rem)}h2{font-size:1.5rem}h3{font-size:1.15rem}
+a,button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blu);outline-offset:3px}
+.skip{position:absolute;left:-999px;top:0;background:var(--blu);color:#001;padding:.6em 1em;z-index:9}.skip:focus{left:8px}
+header.top{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;align-items:center;justify-content:space-between;padding:1rem clamp(1rem,4vw,2.5rem);border-bottom:1px solid var(--line);background:#070b1fcc;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;backdrop-filter:blur(8px)}
+.logo{font:700 1.5rem Sora,sans-serif;letter-spacing:.04em;background:linear-gradient(90deg,var(--vio),var(--blu));-webkit-background-clip:text;background-clip:text;color:transparent}
+nav ul{display:flex;flex-wrap:wrap;gap:.4rem;list-style:none;margin:0;padding:0}
+nav button{background:none;border:2px solid transparent;border-radius:999px;padding:.4rem 1rem;cursor:pointer}
+nav button:hover{border-color:var(--line)}nav button[aria-current=page]{background:var(--card);border-color:var(--vio)}
+main{max-width:960px;margin:0 auto;padding:2rem clamp(1rem,4vw,2rem) 4rem}
+.badge{display:inline-block;border:1px solid var(--warn);color:var(--warn);border-radius:8px;padding:.25rem .7rem;font-size:.95rem;margin-bottom:1rem}
+.card{background:linear-gradient(160deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:20px;padding:1.4rem;margin-bottom:1.2rem}
+.grid{display:grid;gap:1.2rem;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.btn{background:linear-gradient(90deg,var(--vio),#4f6df5);border:0;border-radius:12px;padding:.7rem 1.3rem;font-weight:700;cursor:pointer;color:#fff;min-height:48px}
+.btn.alt{background:transparent;border:2px solid var(--line)}.btn.alt:hover{border-color:var(--blu)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.mut{color:var(--mut)}
+.orb{width:min(60vw,220px);aspect-ratio:1;border-radius:50%;border:0;cursor:pointer;margin:1rem auto;display:grid;place-items:center;font:700 1.1rem Sora,sans-serif;color:#fff;background:radial-gradient(circle at 35% 30%,#a78bfa,#4f46e5 55%,#0ea5e9);box-shadow:0 0 60px #6d5dfc66}
+.orb[aria-pressed=true]{background:radial-gradient(circle at 35% 30%,#7dd3fc,#0ea5e9 55%,#4f46e5);box-shadow:0 0 0 8px #38bdf833,0 0 80px #38bdf8aa;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.04)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+#log{max-height:340px;overflow:auto;display:flex;flex-direction:column;gap:.6rem;padding:0;margin:0;list-style:none}
+#log li{padding:.6rem .9rem;border-radius:14px;max-width:88%}
+#log .u{align-self:flex-end;background:#2b2f6e}#log .a{align-self:flex-start;background:#0b2a45;border:1px solid #1c4a73}
+input[type=text],input[type=datetime-local],input[type=time],select{background:#0a1030;border:2px solid var(--line);border-radius:10px;padding:.6rem .8rem;min-height:48px;width:100%}
+label{display:block;font-weight:700;margin-bottom:.25rem}
+.field{flex:1 1 200px}
+ul.tasks{list-style:none;padding:0;margin:0}
+.tasks li{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:.8rem 0}
+.tasks .done .t{text-decoration:line-through;color:var(--mut)}
+.pri-haute{color:#fb7185}.pri-normale{color:var(--blu)}.pri-basse{color:var(--mut)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+footer{text-align:center;color:var(--mut);padding:2rem 1rem;border-top:1px solid var(--line);font-size:.95rem}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu principal</a>
+<header class="top">
+  <span class="logo" aria-label="AURA">AURA</span>
+  <nav aria-label="Navigation principale"><ul id="nav">
+    <li><button data-view="accueil">Accueil</button></li>
+    <li><button data-view="assistant">Assistant vocal</button></li>
+    <li><button data-view="briefing">Briefing du jour</button></li>
+    <li><button data-view="taches">Tâches</button></li>
+  </ul></nav>
+</header>
+<main id="main">
+<p class="badge" role="note">Mode démo : aucune IA, météo ni actualité n’est connectée. Les données restent dans votre navigateur.</p>
+
+<section id="v-accueil" data-view="accueil" aria-labelledby="h-accueil">
+  <h1 id="h-accueil" tabindex="-1">Un assistant qui parle avant que vous demandiez.</h1>
+  <p class="mut" style="max-width:60ch">AURA est pensé pour les personnes aveugles et malvoyantes : tout passe par la voix et le clavier. Dites ou écrivez une commande, AURA répond à voix haute.</p>
+  <div class="row" style="margin:1.2rem 0 2rem">
+    <button class="btn" data-go="assistant">Essayer AURA</button>
+    <button class="btn alt" data-go="briefing">Écouter le briefing</button>
+  </div>
+  <div class="grid">
+    <div class="card"><h2>Aujourd’hui</h2><p id="today"></p><p id="todaysum"></p></div>
+    <div class="card"><h2>Exemples de commandes</h2><ul class="mut"><li>« Ajoute une tâche acheter du pain demain à 10 heures »</li><li>« Quelles sont mes tâches ? »</li><li>« Marque acheter du pain comme terminée »</li><li>« Lis mon briefing »</li></ul></div>
+    <div class="card"><h2>État des fonctions</h2><ul class="mut"><li>Voix et tâches : actives</li><li>IA conversationnelle : non connectée</li><li>Météo et actualités : non connectées</li><li>Services et réservations : à venir</li></ul></div>
+  </div>
+</section>
+
+<section id="v-assistant" data-view="assistant" aria-labelledby="h-assistant" hidden>
+  <h1 id="h-assistant" tabindex="-1">Assistant vocal</h1>
+  <p class="mut">Appuyez sur le micro, parlez, puis attendez la réponse. Les commandes sont limitées : l’IA n’est pas connectée.</p>
+  <div class="card" style="text-align:center">
+    <button id="mic" class="orb" aria-pressed="false" aria-label="Parler à AURA">Parler</button>
+    <p id="status" role="status" aria-live="polite">Prêt.</p>
+    <p id="nosr" class="mut" hidden>La reconnaissance vocale n’est pas disponible dans ce navigateur. Utilisez la zone de texte ci-dessous.</p>
+  </div>
+  <div class="card">
+    <div class="row" style="align-items:end">
+      <div class="field"><label for="txt">Écrire une commande</label><input id="txt" type="text" autocomplete="off"></div>
+      <button class="btn" id="send">Envoyer</button>
+    </div>
+    <div class="row" style="margin-top:1rem">
+      <button class="btn alt" id="stop">Arrêter la voix</button>
+      <button class="btn alt" id="repeat">Répéter la réponse</button>
+      <button class="btn alt" id="clear">Effacer la conversation</button>
+    </div>
+  </div>
+  <div class="card"><h2>Conversation</h2><ul id="log" aria-live="polite" aria-label="Historique de la conversation"></ul></div>
+</section>
+
+<section id="v-briefing" data-view="briefing" aria-labelledby="h-briefing" hidden>
+  <h1 id="h-briefing" tabindex="-1">Briefing du jour</h1>
+  <p class="mut">Résumé court à écouter. Il contient vos tâches en attente. Météo et actualités indiquent clairement qu’elles ne sont pas connectées.</p>
+  <div class="card">
+    <div class="row">
+      <button class="btn" id="bgen">Générer et lire le briefing</button>
+      <button class="btn alt" id="bpause">Pause</button>
+      <button class="btn alt" id="bstop">Arrêter</button>
+    </div>
+    <div class="row" style="margin-top:1rem">
+      <div class="field"><label for="rate">Vitesse de lecture</label>
+        <select id="rate"><option value="0.8">Lente</option><option value="1" selected>Normale</option><option value="1.25">Rapide</option><option value="1.5">Très rapide</option></select></div>
+      <div class="field"><label for="btime">Heure du briefing automatique</label><input id="btime" type="time" value="07:00"></div>
+    </div>
+    <p class="mut" id="bnote">L’envoi automatique nécessite le serveur et n8n, non branchés dans cette démo : l’heure est seulement enregistrée.</p>
+  </div>
+  <div class="card"><h2>Texte du briefing</h2><p id="btext" aria-live="polite">Aucun briefing généré pour l’instant.</p></div>
+</section>
+
+<section id="v-taches" data-view="taches" aria-labelledby="h-taches" hidden>
+  <h1 id="h-taches" tabindex="-1">Tâches</h1>
+  <form id="tform" class="card" autocomplete="off">
+    <div class="row" style="align-items:end">
+      <div class="field" style="flex:2 1 260px"><label for="ttitle">Nouvelle tâche</label><input id="ttitle" type="text" required></div>
+      <div class="field"><label for="tpri">Priorité</label><select id="tpri"><option value="haute">Haute</option><option value="normale" selected>Normale</option><option value="basse">Basse</option></select></div>
+      <div class="field"><label for="tdue">Échéance</label><input id="tdue" type="datetime-local"></div>
+      <button class="btn" type="submit">Ajouter</button>
+    </div>
+  </form>
+  <div class="card">
+    <div class="field" style="max-width:260px"><label for="tfilter">Afficher</label><select id="tfilter"><option value="all">Toutes</option><option value="pending">En attente</option><option value="done">Terminées</option><option value="haute">Priorité haute</option></select></div>
+    <ul class="tasks" id="tlist" aria-label="Liste des tâches"></ul>
+    <p id="tempty" class="mut" hidden>Aucune tâche ici. Ajoutez-en une ci-dessus ou dites-la à l’assistant.</p>
+  </div>
+</section>
+</main>
+<div id="live" class="sr" role="status" aria-live="polite"></div>
+<footer>AURA – prototype de démonstration. Ne remplace ni les services d’urgence ni les aides à la mobilité.</footer>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+var VIEWS=["accueil","assistant","briefing","taches"];
+// Stockage navigateur (localStorage si disponible, sinon mémoire)
+var mem={};
+function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return mem[k]!==undefined?mem[k]:d}}
+function save(k,v){mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+var tasks=load("aura_tasks",[]);
+var lastReply="",pending=null;
+
+function announce(t){$("#live").textContent="";setTimeout(function(){$("#live").textContent=t},50)}
+function fmt(d){try{return new Date(d).toLocaleString("fr-FR",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}catch(e){return d}}
+
+// Navigation
+function show(v,focus){
+  if(VIEWS.indexOf(v)<0)v="accueil";
+  document.querySelectorAll("main > section").forEach(function(s){s.hidden=s.dataset.view!==v});
+  document.querySelectorAll("#nav button").forEach(function(b){if(b.dataset.view===v)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  document.title="AURA – "+$("#h-"+v).textContent;
+  if(focus)$("#h-"+v).focus();
+  if(v==="accueil")home();
+}
+function go(v){location.hash=v}
+window.addEventListener("hashchange",function(){show(location.hash.slice(1),true)});
+document.querySelectorAll("#nav button,[data-go]").forEach(function(b){b.addEventListener("click",function(){go(b.dataset.view||b.dataset.go)})});
+
+// Voix : synthèse
+var synth=window.speechSynthesis;
+function setStatus(t){$("#status").textContent=t}
+function speak(t,onend){
+  lastReply=t;
+  if(!synth){if(onend)onend();return}
+  synth.cancel();
+  var u=new SpeechSynthesisUtterance(t);u.lang="fr-FR";u.rate=parseFloat($("#rate").value)||1;
+  u.onstart=function(){setStatus("Je parle…")};
+  u.onend=u.onerror=function(){setStatus("Prêt.");if(onend)onend()};
+  synth.speak(u);
+}
+$("#stop").onclick=function(){if(synth)synth.cancel();setStatus("Voix arrêtée.")};
+$("#repeat").onclick=function(){if(lastReply)speak(lastReply);else setStatus("Rien à répéter pour l’instant.")};
+$("#clear").onclick=function(){$("#log").textContent="";lastReply="";pending=null;setStatus("Conversation effacée.")};
+
+// Tâches
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
+function persist(){save("aura_tasks",tasks);renderTasks()}
+function isToday(s){if(!s)return false;var d=new Date(s),n=new Date();return d.toDateString()===n.toDateString()}
+function renderTasks(){
+  var f=$("#tfilter").value,ul=$("#tlist");ul.textContent="";
+  var list=tasks.filter(function(t){return f==="all"||(f==="pending"&&!t.done)||(f==="done"&&t.done)||(f==="haute"&&t.pri==="haute")});
+  $("#tempty").hidden=list.length>0;
+  list.forEach(function(t){
+    var li=document.createElement("li");if(t.done)li.className="done";
+    var d=document.createElement("div");
+    var s=document.createElement("span");s.className="t";s.textContent=t.title;d.appendChild(s);
+    var m=document.createElement("div");m.className="mut";
+    var p=document.createElement("span");p.className="pri-"+t.pri;p.textContent="Priorité "+t.pri;
+    m.appendChild(p);m.appendChild(document.createTextNode(t.due?" – échéance "+fmt(t.due):" – sans échéance"));
+    d.appendChild(m);li.appendChild(d);
+    var r=document.createElement("div");r.className="row";
+    function b(label,aria,fn){var x=document.createElement("button");x.className="btn alt";x.textContent=label;x.setAttribute("aria-label",aria+" : "+t.title);x.onclick=fn;r.appendChild(x)}
+    b(t.done?"Rouvrir":"Terminer",t.done?"Rouvrir la tâche":"Terminer la tâche",function(){t.done=!t.done;persist();announce(t.done?"Tâche terminée.":"Tâche rouverte.")});
+    b("Modifier","Modifier la tâche",function(){var n=prompt("Nouveau titre de la tâche",t.title);if(n&&n.trim()){t.title=n.trim();persist();announce("Tâche modifiée.")}});
+    b("Supprimer","Supprimer la tâche",function(){if(confirm("Supprimer « "+t.title+" » ?")){tasks=tasks.filter(function(x){return x!==t});persist();announce("Tâche supprimée.")}});
+    li.appendChild(r);ul.appendChild(li);
+  });
+}
+$("#tfilter").onchange=renderTasks;
+$("#tform").onsubmit=function(e){
+  e.preventDefault();var t=$("#ttitle").value.trim();if(!t)return;
+  tasks.push({id:uid(),title:t,pri:$("#tpri").value,due:$("#tdue").value,done:false});
+  persist();this.reset();announce("Tâche ajoutée : "+t);$("#ttitle").focus();
+};
+
+// Accueil
+function home(){
+  $("#today").textContent=new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  var p=tasks.filter(function(t){return !t.done});
+  $("#todaysum").textContent=p.length?p.length+" tâche"+(p.length>1?"s":"")+" en attente.":"Aucune tâche en attente.";
+}
+
+// Interprétation des commandes (démo : règles simples, pas d’IA)
+function parseWhen(s){
+  var d=null,now=new Date();
+  if(/demain/.test(s)){d=new Date(now);d.setDate(d.getDate()+1)}
+  else if(/aujourd/.test(s)){d=new Date(now)}
+  var m=s.match(/(\d{1,2})\s*(?:h|heures?)\s*(\d{2})?/);
+  if(m){d=d||new Date(now);d.setHours(+m[1],+(m[2]||0),0,0)}
+  else if(d)d.setHours(9,0,0,0);
+  if(!d)return "";
+  var z=function(n){return String(n).padStart(2,"0")};
+  return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())+"T"+z(d.getHours())+":"+z(d.getMinutes());
+}
+function findTask(q){q=q.trim();return tasks.filter(function(t){return t.title.toLowerCase().indexOf(q)>=0||q.indexOf(t.title.toLowerCase())>=0})[0]}
+function listTasks(arr){return arr.map(function(t){return t.title+(t.due?", "+fmt(t.due):"")}).join(". ")}
+function briefing(){
+  var d=new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  var p=tasks.filter(function(t){return !t.done}),td=p.filter(function(t){return isToday(t.due)});
+  var s="Bonjour. Voici votre briefing du "+d+". Météo : non connectée en mode démo. Actualités : non connectées en mode démo. ";
+  s+=p.length?"Vous avez "+p.length+" tâche"+(p.length>1?"s":"")+" en attente. ":"Vous n’avez aucune tâche en attente. ";
+  if(td.length)s+="Prévues aujourd’hui : "+listTasks(td.slice(0,5))+". ";
+  return s+"Fin du briefing.";
+}
+function handle(raw){
+  var s=raw.toLowerCase().trim(),m;
+  if(pending){var p=pending;pending=null;
+    if(/^(oui|ok|confirme|d’accord|d'accord)/.test(s)){tasks=tasks.filter(function(t){return t.id!==p});persist();return "C’est supprimé."}
+    return "D’accord, j’annule. Rien n’a été supprimé."}
+  if(/(répète|repete)/.test(s))return lastReply||"Je n’ai rien à répéter.";
+  if(/briefing|résumé de la journée/.test(s))return briefing();
+  if(/météo|meteo|temps qu/.test(s))return "La météo n’est pas connectée dans cette démo. Je ne peux pas vous donner de prévision fiable.";
+  if(/actualit|nouvelles|infos du jour/.test(s))return "Les actualités ne sont pas connectées dans cette démo. Je ne veux pas en inventer.";
+  if(/rendez-vous|agenda/.test(s)){var a=tasks.filter(function(t){return !t.done&&isToday(t.due)});
+    return "Aucun agenda n’est connecté. "+(a.length?"Tâches avec échéance aujourd’hui : "+listTasks(a)+".":"Vous n’avez aucune tâche avec échéance aujourd’hui.")}
+  if(m=s.match(/^(?:supprime|efface)\s+(?:la tâche\s+)?(.+)$/)){var t=findTask(m[1]);
+    if(!t)return "Je ne trouve pas cette tâche.";pending=t.id;return "Voulez-vous vraiment supprimer « "+t.title+" » ? Dites oui pour confirmer."}
+  if(m=s.match(/^(?:termine|marque)\s+(.+?)(?:\s+comme\s+termin\S+)?$/)){var t2=findTask(m[1]);
+    if(!t2)return "Je ne trouve pas cette tâche.";t2.done=true;persist();return "J’ai marqué « "+t2.title+" » comme terminée."}
+  if(/(quelles|mes|liste).*t[aâ]ches|t[aâ]ches.*(aujourd|en attente)/.test(s)){var p2=tasks.filter(function(t){return !t.done});
+    return p2.length?"Vous avez "+p2.length+" tâche"+(p2.length>1?"s":"")+" : "+listTasks(p2)+".":"Vous n’avez aucune tâche en attente."}
+  if(m=s.match(/^(?:ajoute|crée|cree|rappelle[- ]moi(?: de| d’| d')?)\s*(?:une tâche|une tache|la tâche)?\s*(?:de |d’|d')?(.+)$/)){
+    var due=parseWhen(m[1]);
+    var title=m[1].replace(/\b(demain|aujourd.hui)\b/g,"").replace(/\bà?\s*\d{1,2}\s*(?:h|heures?)\s*(?:\d{2})?/g,"").replace(/\s+/g," ").replace(/\s+à$/,"").trim();
+    if(!title)return "Quelle tâche voulez-vous ajouter ?";
+    tasks.push({id:uid(),title:title,pri:"normale",due:due,done:false});persist();
+    return "C’est noté : « "+title+" »"+(due?", pour le "+fmt(due):"")+"."}
+  return "Je n’ai pas compris. En mode démo, je comprends : ajouter, lister ou terminer une tâche, lire le briefing.";
+}
+function say(who,t){var li=document.createElement("li");li.className=who;li.textContent=(who==="u"?"Vous : ":"AURA : ")+t;$("#log").appendChild(li);$("#log").scrollTop=1e9}
+function ask(t){
+  if(!t.trim())return;say("u",t);setStatus("Traitement…");
+  var r=handle(t);say("a",r);speak(r);
+}
+$("#send").onclick=function(){var v=$("#txt").value;$("#txt").value="";ask(v)};
+$("#txt").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("#send").click()}});
+
+// Reconnaissance vocale
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition,rec=null,listening=false;
+if(!SR){$("#nosr").hidden=false;$("#mic").disabled=true;$("#mic").setAttribute("aria-label","Micro indisponible dans ce navigateur")}
+else{
+  rec=new SR();rec.lang="fr-FR";rec.interimResults=false;
+  rec.onresult=function(e){ask(e.results[0][0].transcript)};
+  rec.onerror=function(e){setStatus(e.error==="not-allowed"?"Accès au micro refusé. Autorisez-le dans le navigateur ou écrivez votre commande.":"Je n’ai pas entendu. Réessayez.")};
+  rec.onend=function(){listening=false;$("#mic").setAttribute("aria-pressed","false");$("#mic").textContent="Parler"};
+  $("#mic").onclick=function(){
+    if(listening){rec.stop();return}
+    if(synth)synth.cancel();
+    try{rec.start();listening=true;$("#mic").setAttribute("aria-pressed","true");$("#mic").textContent="J’écoute";setStatus("Écoute…")}catch(e){}
+  };
+}
+
+// Briefing
+var bpaused=false;
+$("#bgen").onclick=function(){var t=briefing();$("#btext").textContent=t;bpaused=false;$("#bpause").textContent="Pause";speak(t)};
+$("#bpause").onclick=function(){if(!synth)return;if(bpaused){synth.resume();bpaused=false;this.textContent="Pause"}else{synth.pause();bpaused=true;this.textContent="Reprendre"}};
+$("#bstop").onclick=function(){if(synth)synth.cancel();bpaused=false;$("#bpause").textContent="Pause"};
+$("#btime").value=load("aura_btime","07:00");
+$("#btime").onchange=function(){save("aura_btime",this.value);announce("Heure du briefing enregistrée : "+this.value)};
+$("#rate").onchange=function(){if(synth&&synth.speaking&&lastReply)speak(lastReply)};
+
+renderTasks();
+show(location.hash.slice(1),false);
+})();
+</script>
+</body>
+</html>
